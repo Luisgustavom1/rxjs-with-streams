@@ -1,0 +1,15 @@
+{
+  "name": "streams-rxjs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx browser-sync start --server --watch --files \"**/*.html\" \"**/*.cc\" \"**/*.js\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "browser-sync": "3.0.2"
+  }
+}
