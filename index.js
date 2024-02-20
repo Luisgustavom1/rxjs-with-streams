@@ -1,4 +1,4 @@
-import { fromEvent, map } from "./operators.js";
+import { merge, fromEvent, map } from "./operators.js";
 
 const canvas = document.getElementById('canvas');
 const clearButton = document.getElementById('clearButton');
@@ -16,6 +16,20 @@ const mouseEvents = {
 
   click: 'click',
 };
+
+/**
+ * 
+ * @param {HTMLElement} canvasEl 
+ * @param {EventTarget} eventValue 
+ */
+const getMousePosition = (canvasEl, eventValue) => {
+  const rect = canvasEl.getBoundingClientRect();
+
+  return {
+    x: eventValue.clientX - rect.left,
+    y: eventValue.clientY - rect.top
+  };
+}
 
 const resetCanvas = (width, height) => {
   const parent = canvas.parentElement;
@@ -38,10 +52,16 @@ const touchToMouse = (touchEvent, mouseEvent) => {
   });
 }
 
-fromEvent(canvas, mouseEvents.touchstart)
-  .pipeThrough(map(ev => touchToMouse(ev, mouseEvents.touchstart)))
-  .pipeTo(new WritableStream({
-    write(chunk) {
-      console.log('chunk', chunk);
-    }
-  }))
+merge([
+  fromEvent(canvas, mouseEvents.down),
+  fromEvent(canvas, mouseEvents.touchstart)
+    .pipeThrough(map(ev => touchToMouse(ev, mouseEvents.touchstart)))
+])
+.pipeTo(new WritableStream({
+  write(mousedown) {
+    const position = getMousePosition(canvas, mousedown);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(position.x, position.y);
+    ctx.stroke();
+  }
+}));
