@@ -1,4 +1,4 @@
-import { merge, fromEvent, map } from "./operators.js";
+import { merge, fromEvent, map, switchMap } from "./operators.js";
 
 const canvas = document.getElementById('canvas');
 const clearButton = document.getElementById('clearButton');
@@ -55,13 +55,31 @@ const touchToMouse = (touchEvent, mouseEvent) => {
 merge([
   fromEvent(canvas, mouseEvents.down),
   fromEvent(canvas, mouseEvents.touchstart)
-    .pipeThrough(map(ev => touchToMouse(ev, mouseEvents.touchstart)))
+    .pipeThrough(map(ev => touchToMouse(ev, mouseEvents.down)))
 ])
+.pipeThrough(
+  switchMap(() => 
+    merge([
+      fromEvent(canvas, mouseEvents.move),
+      fromEvent(canvas, mouseEvents.touchmove).pipeThrough(map(ev => touchToMouse(ev, mouseEvents.touchmove))),
+    ])
+  )
+)
+.pipeThrough(
+  map(function ([mousedown, mousemove]) {
+    this._lastPosition = this._lastPosition || mousedown;
+    
+    const [from, to] = [this._lastPosition, mousemove]
+    .map(item => getMousePosition(canvas, item));
+    this._lastPosition = mousemove;
+
+    return { from, to };
+  })
+)
 .pipeTo(new WritableStream({
-  write(mousedown) {
-    const position = getMousePosition(canvas, mousedown);
-    ctx.moveTo(0, 0);
-    ctx.lineTo(position.x, position.y);
+  write({ from, to }) {
+    ctx.moveTo(from.x, from.y);
+    ctx.lineTo(to.x, to.y);
     ctx.stroke();
   }
 }));

@@ -40,7 +40,7 @@ const interval = (ms) => {
 const map = (fn) => {
   return new TransformStream({
     transform(chunk, controller) {
-      controller.enqueue(fn(chunk));
+      controller.enqueue(fn.bind(fn)(chunk));
     }
   })
 }
